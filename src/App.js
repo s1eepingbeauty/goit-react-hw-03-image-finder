@@ -1,5 +1,4 @@
 import { Component } from 'react';
-
 import apiService from './utils/apiService';
 import Searchbar from './components/Searchbar/Searchbar';
 import ImageGallery from './components/ImageGallery/ImageGallery';
@@ -9,68 +8,82 @@ import Loader from 'react-loader-spinner';
 import './App.scss';
 
 export default class App extends Component {
-
   state = {
     searchQuery: '',
     page: 1,
     imgData: [],
-    showModal: true,
+    showModal: false,
+    currentImg: [],
   };
 
   componentDidUpdate(prevProps, prevState) {
-    if (this.state.searchQuery !== prevState.searchQuery){
-      this.setState({ imgList: []});
+    const prevQuery = prevState.searchQuery;
+    const newQuery = this.state.searchQuery;
+    const gallery = document.querySelector('.ImageGallery');
+
+    if (newQuery !== prevQuery) {
+      this.setState({ imgList: [] });
+      gallery.innerHTML = '';
+      this.handleFetchData(newQuery);
     }
   }
 
   handleSubmit = (searchQuery) => {
-    this.setState({ searchQuery });
-    apiService(searchQuery, this.state.page)
-      .then(data => {
+    this.setState({ searchQuery, page: 1 });
+  };
+
+  handleFetchData = (newQuery) => {
+    const { page } = this.state;
+
+    apiService(newQuery, page)
+      .then((data) => {
         if (data.length === 0) {
           return alert('No images found');
         }
-        this.setState(prevState => ({
+        this.setState((prevState) => ({
           imgData: [...prevState.imgData, ...data],
         }));
       })
-  };
-
-  handleImgClick = () => {
-    
+      .catch(({ message }) =>
+        console.log(message)
+      )
+      .finally(() => {
+        window.scrollBy({
+          top: window.innerHeight,
+          left: 0,
+          behavior: 'smooth',
+        });
+        this.setState(prevState => ({ page: (prevState.page += 1) }));
+      });
   };
 
   handleLoadMore = () => {
-    console.log('before ' + this.state.page);
-    this.setState((prevState) => ({ page: (prevState.page += 1) }));
-    console.log('after+1 ' + this.state.page);
-    const { searchQuery, page } = this.state;
-    apiService(searchQuery, page).then(data => {
-      this.setState(prevState => ({
-        imgData: [...prevState.imgData, ...data],
-      }));
-      window.scrollBy({
-        top: window.innerHeight,
-        left: 0,
-        behavior: 'smooth'
-      });
-    });
-    console.log('after fetch' + this.state.page);
+    const { searchQuery } = this.state;
+    this.handleFetchData(searchQuery);  
   };
-  
+
+  handleImgClick = (event) => {
+    const img = event.target;
+    const url = img.dataset.source;
+    const alt = img.tags;
+
+    if (event.target.nodeName === 'IMG') {
+      this.setState({ currentImg: { url, alt } });
+    }
+    this.toggleModal();
+  };
+
   toggleModal = () => {
-    this.setState(({ showModal }) => (
-      { showModal: !showModal }
-    ));
+    this.setState(({ showModal }) => ({ showModal: !showModal }));
   };
 
   render() {
-    const { imgData, showModal } = this.state;
-  
+    const { imgData, showModal, currentImg } = this.state;
+
     return (
       <>
         <Searchbar onSubmit={this.handleSubmit} />
-        <ImageGallery handleImgClick={this.handleImgClick} imgData={imgData} />
+        <ImageGallery onImgClick={this.handleImgClick} imgData={imgData} />
         <Loader
           visible="false"
           type="Puff"
@@ -79,10 +92,12 @@ export default class App extends Component {
           width={100}
           timeout={3000} //3 secs
         />
-        <Button onClick={this.handleLoadMore} />
+        {imgData.length > 0 && <Button onClick={this.handleLoadMore} />}
         {showModal && (
-          <Modal>
-            <button type="button" onClick={this.toggleModal}>X</button>
+          <Modal
+            url={currentImg.url}
+            alt={currentImg.alt}
+            onClose={this.toggleModal}>
           </Modal>
         )}
       </>

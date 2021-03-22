@@ -11,7 +11,7 @@ class Searchbar extends Component {
     const { initialValue } = this.state;
     const { onSubmit } = this.props;
     if (initialValue === '') {
-      alert('Enter your query');
+      alert('Please enter your query');
     }
     onSubmit(initialValue);
     this.setState({ initialValue: '' });
@@ -43,6 +43,6 @@ class Searchbar extends Component {
       </header>
     );
   }
-};
+}
 
 export default Searchbar;
