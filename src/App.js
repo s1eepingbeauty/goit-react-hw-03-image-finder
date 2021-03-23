@@ -5,6 +5,9 @@ import ImageGallery from './components/ImageGallery/ImageGallery';
 import Button from './components/Button/Button';
 import Modal from './components/Modal/Modal';
 import Loader from 'react-loader-spinner';
+import { success, error } from '@pnotify/core';
+import '@pnotify/core/dist/Material.css';
+import 'material-design-icons/iconfont/material-icons.css';
 import './App.scss';
 
 export default class App extends Component {
@@ -12,18 +15,17 @@ export default class App extends Component {
     searchQuery: '',
     page: 1,
     imgData: [],
+    currentImg: {},
     showModal: false,
-    currentImg: [],
+    showSpinner: false,
   };
 
   componentDidUpdate(prevProps, prevState) {
     const prevQuery = prevState.searchQuery;
     const newQuery = this.state.searchQuery;
-    const gallery = document.querySelector('.ImageGallery');
 
     if (newQuery !== prevQuery) {
-      this.setState({ imgList: [] });
-      gallery.innerHTML = '';
+      this.setState({ imgData: [], showSpinner: true });
       this.handleFetchData(newQuery);
     }
   }
@@ -38,36 +40,44 @@ export default class App extends Component {
     apiService(newQuery, page)
       .then((data) => {
         if (data.length === 0) {
-          return alert('No images found');
+          return error({
+            text: 'No matching images found, please enter new search terms...',
+            hide: true,
+            delay: 2000,
+          });
         }
         this.setState((prevState) => ({
           imgData: [...prevState.imgData, ...data],
         }));
+        success({
+          text: 'Here you go :)',
+          hide: true,
+          delay: 1000,
+        });
       })
-      .catch(({ message }) =>
-        console.log(message)
-      )
+      .catch(({ message }) => console.log(message))
       .finally(() => {
-        window.scrollBy({
-          top: window.innerHeight,
-          left: 0,
+        this.setState({ showSpinner: false });
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
           behavior: 'smooth',
         });
-        this.setState(prevState => ({ page: (prevState.page += 1) }));
+        this.setState((prevState) => ({ page: (prevState.page += 1) }));
       });
   };
 
   handleLoadMore = () => {
     const { searchQuery } = this.state;
-    this.handleFetchData(searchQuery);  
+    this.setState({ showSpinner: true });
+    this.handleFetchData(searchQuery);
   };
 
   handleImgClick = (event) => {
     const img = event.target;
     const url = img.dataset.source;
-    const alt = img.tags;
+    const alt = img.alt;
 
-    if (event.target.nodeName === 'IMG') {
+    if (img.nodeName === 'IMG') {
       this.setState({ currentImg: { url, alt } });
     }
     this.toggleModal();
@@ -78,27 +88,25 @@ export default class App extends Component {
   };
 
   render() {
-    const { imgData, showModal, currentImg } = this.state;
+    const { imgData, showModal, currentImg, showSpinner } = this.state;
 
     return (
       <>
         <Searchbar onSubmit={this.handleSubmit} />
-        <ImageGallery onImgClick={this.handleImgClick} imgData={imgData} />
-        <Loader
-          visible="false"
-          type="Puff"
-          color="#00BFFF"
-          height={100}
-          width={100}
-          timeout={3000} //3 secs
-        />
-        {imgData.length > 0 && <Button onClick={this.handleLoadMore} />}
+        <div className="gallery">
+          <ImageGallery onImgClick={this.handleImgClick} imgData={imgData} />
+          <Loader
+            className="spinner"
+            type="Oval"
+            color="#00BFFF"
+            height={80}
+            width={80}
+            visible={showSpinner}
+          />
+          {imgData.length !== 0 && <Button onClick={this.handleLoadMore} />}
+        </div>
         {showModal && (
-          <Modal
-            url={currentImg.url}
-            alt={currentImg.alt}
-            onClose={this.toggleModal}>
-          </Modal>
+          <Modal url={currentImg.url} alt={currentImg.alt} onClose={this.toggleModal}></Modal>
         )}
       </>
     );

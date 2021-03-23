@@ -1,9 +1,9 @@
 import { Component } from 'react';
 import PropTypes from 'prop-types';
-import ImageGalleryItem from '../ImageGalleryItem/ImageGalleryItem'
+import ImageGalleryItem from '../ImageGalleryItem/ImageGalleryItem';
 import './ImageGallery.scss';
 
-export default class ImageGallery extends Component{
+export default class ImageGallery extends Component {
   render() {
     const { onImgClick, imgData } = this.props;
 
@@ -21,9 +21,9 @@ export default class ImageGallery extends Component{
       </ul>
     );
   }
-};
-
-ImageGallery.propType = {
-  onClick: PropTypes.func.isRequired,
-  imgData: PropTypes.array.isRequired,
 }
+
+ImageGallery.propTypes = {
+  onImgClick: PropTypes.func.isRequired,
+  imgData: PropTypes.array.isRequired,
+};

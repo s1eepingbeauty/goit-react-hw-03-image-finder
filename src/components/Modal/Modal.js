@@ -1,14 +1,15 @@
 import { Component } from 'react';
 import { createPortal } from 'react-dom';
-import Loader from 'react-loader-spinner'; 
+import PropTypes from 'prop-types';
+import Loader from 'react-loader-spinner';
 import './Modal.scss';
 
 const modalRoot = document.querySelector('#modal-root');
 
 export default class Modal extends Component {
   state = {
-    loading: true,
-  }
+    showSpinner: true,
+  };
 
   componentDidMount() {
     window.addEventListener('keydown', this.handleKeyDown);
@@ -21,41 +22,46 @@ export default class Modal extends Component {
   handleKeyDown = (event) => {
     if (event.code === 'Escape') {
       this.props.onClose();
-      this.setState({ loading: true });
+      this.setState({ showSpinner: true });
     }
   };
 
   handleOverlayClick = (event) => {
     if (event.currentTarget === event.target) {
       this.props.onClose();
-      this.setState({ loading: true });
+      this.setState({ showSpinner: true });
     }
   };
 
-  hangleImgLoad = () => {
-    this.setState({ loading: false });
-  }
+  handleImgLoad = () => {
+    this.setState({ showSpinner: false });
+  };
 
   render() {
     const { url, alt } = this.props;
+    const { showSpinner } = this.state;
+
     return createPortal(
       <div className="Overlay" onClick={this.handleOverlayClick}>
         <div className="Modal">
-          {/* {this.props.children} */}
-          {this.state.loading && (
-            <Loader
-              visible="false"
-              type="Puff"
-              color="#00BFFF"
-              height={100}
-              width={100}
-              //timeout={3000} //3 secs
-            />
-          )}
-          <img className="modalImg" src={url} alt={alt} onLoad={this.hangleImgLoad} />
+          <Loader
+            className="spinner"
+            type="Oval"
+            color="#00BFFF"
+            height={80}
+            width={80}
+            visible={showSpinner}
+          />
+          <img className="modalImg" src={url} alt={alt} onLoad={this.handleImgLoad} />
         </div>
       </div>,
       modalRoot,
     );
   }
 }
+
+Modal.propTypes = {
+  url: PropTypes.string.isRequired,
+  alt: PropTypes.string.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
